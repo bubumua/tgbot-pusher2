@@ -15,26 +15,28 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { handleRoot } from './handlers/tgbot';
+import { handleInit } from './handlers/tgbotInit';
+import { handleTgWebhook } from './handlers/tgbotFunc';
+
 export default {
-	async fetch(req) {
+	async fetch(req: Request, env: any, ctx: any) {
 		const url = new URL(req.url);
-		url.pathname = '/__scheduled';
-		url.searchParams.append('cron', '* * * * *');
-		return new Response(`To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`);
+		const pathname = url.pathname || '/';
+
+		try {
+			if (pathname === '/tgbot') return handleRoot(req, env);
+			if (pathname === '/tgbot/init') return handleInit(req, env);
+			if (pathname === '/tgbot/func') return handleTgWebhook(req, env);
+
+			return new Response('Not Found such path ' + pathname, { status: 404 });
+		} catch (e) {
+			return new Response(String(e), { status: 500 });
+		}
 	},
 
-	// The scheduled handler is invoked at the interval set in our wrangler.jsonc's
-	// [[triggers]] configuration.
-	async scheduled(event, env, ctx): Promise<void> {
-		// A Cron Trigger can make requests to other endpoints on the Internet,
-		// publish to a Queue, query a D1 Database, and much more.
-		//
-		// We'll keep it simple and make an API call to a Cloudflare API:
-		let resp = await fetch('https://api.cloudflare.com/client/v4/ips');
-		let wasSuccessful = resp.ok ? 'success' : 'fail';
-
-		// You could store this result in KV, write to a D1 Database, or publish to a Queue.
-		// In this template, we'll just log the result:
-		console.log(`trigger fired at ${event.cron}: ${wasSuccessful}`);
+	async scheduled(event: any, env: any, ctx: any): Promise<void> {
+		// Placeholder scheduled handler. Use this to trigger pushes to chats.
+		console.log(`scheduled trigger fired at ${event.cron}`);
 	},
 } satisfies ExportedHandler<Env>;
