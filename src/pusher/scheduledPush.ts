@@ -194,7 +194,7 @@ export async function runScheduledPush(env: Env) {
     }
 
     // combine messages into one and send: BL first (if any), then DY
-    const finalText = ((blMessages ? `${blMessages}` : '') + (dyMessages ? `\n\n${dyMessages}` : '')).trim();
+    const finalText = ((blMessages ? `${blMessages}` : '') + `\n---\n` + (dyMessages ? `\n\n${dyMessages}` : '')).trim();
     if (!finalText) {
         console.log('runScheduledPush: no status changes to send');
         return;
