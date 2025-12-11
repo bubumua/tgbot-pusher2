@@ -84,6 +84,8 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
     }
 
     const ordered = [...liveMessages, ...loopMessages, ...offlineMessages];
+    console.log("[debug]bl live info push: ", ordered);
+
     // return ordered.length ? ordered.join('\n\n') : '';
     return messages.length ? messages.join('\n\n') : '';
 }
@@ -214,8 +216,8 @@ export async function runScheduledPush(env: Env) {
 
     // send message
     try {
+        console.log('runScheduledPush: sent messages as below:', finalText);
         await sendMessage(botToken, chatId, finalText, 'MarkdownV2');
-        console.log('runScheduledPush: sent messages', { bl: !!blMessages, dy: !!dyMessages });
     } catch (e) {
         console.log('runScheduledPush: sendMessage failed', String(e));
     }
