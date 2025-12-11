@@ -9,7 +9,7 @@ export async function setWebhook(token: string, url: string) {
     const res = await fetch(`${TG_API(token)}/setWebhook`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, drop_pending_updates: true }),
     });
     return res.json();
 }
