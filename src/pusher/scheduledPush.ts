@@ -198,14 +198,14 @@ export async function runScheduledPush(env: Env) {
 
     // get DY infos
     let dyMessages = '';
-    try {
-        dyMessages = await getDYInfos(kv);
-    } catch (e) {
-        console.log('runScheduledPush: getDYInfos error', String(e));
-    }
-    if (!dyMessages) {
-        console.log('runScheduledPush: no DY status changes');
-    }
+    // try {
+    //     dyMessages = await getDYInfos(kv);
+    // } catch (e) {
+    //     console.log('runScheduledPush: getDYInfos error', String(e));
+    // }
+    // if (!dyMessages) {
+    //     console.log('runScheduledPush: no DY status changes');
+    // }
 
     // combine messages into one and send: BL first (if any), then DY
     const finalText = ((blMessages ? `_Bilibili_\n${blMessages}` : '') + (dyMessages ? `_Douyin_\n${dyMessages}` : '')).trim();
