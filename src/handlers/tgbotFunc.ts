@@ -143,7 +143,7 @@ export async function handleTgWebhook(req: Request, env: Env) {
             const resp: any = await fetchDYLiveInfo(sec);
             if (resp && resp.apisuccess && resp.data) {
                 const entry = resp.data;
-                nickname = entry?.nickname ?? entry?.uname ?? entry?.unique_id ?? '';
+                nickname = entry[nickname] ?? entry?.nickname ?? entry?.uname ?? entry?.unique_id ?? '';
             }
         } catch (e) {
             console.log('dy fetch nickname error', String(e));
