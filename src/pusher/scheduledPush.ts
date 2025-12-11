@@ -213,7 +213,7 @@ export async function runScheduledPush(env: Env) {
 
     // send message
     try {
-        await sendMessage(botToken, chatId, finalText);
+        await sendMessage(botToken, chatId, finalText, 'MarkdownV2');
         console.log('runScheduledPush: sent messages', { bl: !!blMessages, dy: !!dyMessages });
     } catch (e) {
         console.log('runScheduledPush: sendMessage failed', String(e));
