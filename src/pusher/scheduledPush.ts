@@ -34,6 +34,8 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
     const liveMessages: string[] = [];
     const loopMessages: string[] = [];
     const offlineMessages: string[] = [];
+    // count of changed statuses
+    let changedCount = 0;
 
     for (const uidKey of Object.keys(cur)) {
         const info = cur[uidKey];
@@ -46,7 +48,7 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
 
         const isLiveStatusChanged = Number(prev[uid]) !== live_status;
 
-        if (!isLiveStatusChanged) continue;
+        if (!isLiveStatusChanged) { continue } else { changedCount += 1; }
 
         const statusTexts: Record<number, string> = {
             0: '已下播',
@@ -72,10 +74,13 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
     for (const k of Object.keys(cur)) {
         nextPrev[k] = Number(cur[k].live_status ?? cur[k].livestatus ?? 0);
     }
-    try {
-        await BLStore.setJson(KEY_LAST_INFO_STATUS, nextPrev);
-    } catch (e) {
-        console.log('getBLInfos: failed to write last statuses', String(e));
+
+    if (changedCount > 0) {
+        try {
+            await BLStore.setJson(KEY_LAST_INFO_STATUS, nextPrev);
+        } catch (e) {
+            console.log('getBLInfos: failed to write last statuses', String(e));
+        }
     }
 
     const ordered = [...liveMessages, ...loopMessages, ...offlineMessages];
@@ -100,7 +105,8 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
     const prev = (await DYStore.getJson<Record<string, number>>(KEY_LAST_INFO_STATUS)) || {};
     // will persist next statuses here
     const nextPrev: Record<string, number> = {};
-
+    // count changed statuses
+    let changedCount = 0;
     // fetch current live infos per sec_user_id
     for (const sec_user_id of sec_user_ids) {
         let apiResp: any;
@@ -119,7 +125,7 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
         nextPrev[String(sec_user_id)] = Number(cur.live_status ?? 0);
         // status changed -> prepare message
         const isLiveStatusChanged = Number(cur.live_status) !== Number(prev[String(sec_user_id)]);
-        if (!isLiveStatusChanged) continue;
+        if (!isLiveStatusChanged) { continue } else { changedCount += 1; }
         const statusTexts: Record<number, string> = {
             0: '已下播',
             1: '*正在直播！*',
@@ -139,10 +145,12 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
     }
 
     // persist latest DY statuses
-    try {
-        await DYStore.setJson(KEY_LAST_INFO_STATUS, nextPrev);
-    } catch (e) {
-        console.log('getDYInfos: failed to write last statuses', String(e));
+    if (changedCount > 0) {
+        try {
+            await DYStore.setJson(KEY_LAST_INFO_STATUS, nextPrev);
+        } catch (e) {
+            console.log('getDYInfos: failed to write last statuses', String(e));
+        }
     }
 
     const ordered = [...liveMessages, ...loopMessages, ...offlineMessages];
