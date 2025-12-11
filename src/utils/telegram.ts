@@ -23,11 +23,11 @@ export async function setMyCommands(token: string, commands: Array<{ command: st
     return res.json();
 }
 
-export async function sendMessage(token: string, chat_id: number | string, text: string) {
+export async function sendMessage(token: string, chat_id: number | string, text: string, parse_mode: string = 'MarkdownV2') {
     const res = await fetch(`${TG_API(token)}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id, text }),
+        body: JSON.stringify({ chat_id, text, parse_mode }),
     });
     return res.json();
 }
