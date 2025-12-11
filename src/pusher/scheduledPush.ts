@@ -1,7 +1,7 @@
-import { getList, readByKey, writeKV } from '../storage/kv';
 import { sendMessage } from '../utils/telegram';
 import { fetchLiveInfos } from '../utils/bilibili';
 import { KVStore } from '../storage/KVStore';
+import { KEY_USERLIST, KEY_LAST_INFO_STATUS } from '../storage/KVStore';
 
 /**
  * Main scheduled runner. Reads `uplist` from KV (env.liveinfo), fetches live infos,
@@ -28,10 +28,10 @@ export async function runScheduledPush(env: Env) {
     }
 
     // init KVStore
-    const kvStore: KVStore = new KVStore(kv, 'BL');
+    const BLStore: KVStore = new KVStore(kv, 'BL');
 
-    // const uplist = await getList(kv);
-    const uplist = await kvStore.getJson<[]>('uplist');
+    // read uplist from KVStore
+    const uplist = (await BLStore.getJson<number[] | string[]>(KEY_USERLIST)) || [];
 
     if (!uplist || uplist.length === 0) {
         console.log('runScheduledPush: uplist empty');
@@ -53,8 +53,8 @@ export async function runScheduledPush(env: Env) {
     }
 
     const cur = apiResp.data;
-    // read previous statuses (mapping uid -> live_status)
-    let prev = (await readByKey(kv, 'last_live_infos')) || {};
+    // read previous statuses (mapping uid -> live_status) from KVStore
+    let prev = (await BLStore.getJson<Record<string, number>>(KEY_LAST_INFO_STATUS)) || {};
     // const isFirstRun = !prev || Object.keys(prev).length === 0;
     const messages: string[] = [];
     for (const uidKey of Object.keys(cur)) {
@@ -98,7 +98,7 @@ export async function runScheduledPush(env: Env) {
 
     // persist latest statuses
     try {
-        await writeKV(kv, 'last_live_infos', prev);
+        await BLStore.setJson(KEY_LAST_INFO_STATUS, prev);
     } catch (e) {
         console.log('runScheduledPush: failed to write last_live_infos', String(e));
     }

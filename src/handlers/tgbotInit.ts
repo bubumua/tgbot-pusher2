@@ -1,4 +1,5 @@
 import { setWebhook, setMyCommands } from '../utils/telegram';
+import { COMMANDS } from '../constants/commands';
 
 export async function handleInit(req: Request, env: any) {
     const botToken = env.BOT_TOKEN;
@@ -17,14 +18,9 @@ export async function handleInit(req: Request, env: any) {
     } catch (e) {
         results.setWebhook = { error: String(e) };
     }
-    // Set commands
-    const commands = [
-        { command: 'add', description: 'Add uid. e.g. /add 123' },
-        { command: 'rm', description: 'Remove uid. e.g. /rm 123' },
-        { command: 'ls', description: 'List uids' },
-    ];
+    // Set commands from centralized COMMANDS
     try {
-        results.setCommands = await setMyCommands(botToken, commands);
+        results.setCommands = await setMyCommands(botToken, COMMANDS as any);
     } catch (e) {
         results.setCommands = { error: String(e) };
     }
