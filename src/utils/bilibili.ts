@@ -1,4 +1,4 @@
-const LIVEINFOS_ENDPOINT = 'https://api-forwarding-vc.vercel.app/api/bili/liveinfos';
+const BLLIVEINFOS_ENDPOINT = 'https://api-forwarding-vc.vercel.app/api/bili/liveinfos';
 
 /**
  * Fetch liveinfos for given uids via GET (uids[] params)
@@ -6,7 +6,7 @@ const LIVEINFOS_ENDPOINT = 'https://api-forwarding-vc.vercel.app/api/bili/livein
 export async function fetchLiveInfos(uids: string[] | number[]) {
     if (!uids || uids.length === 0) return null;
     // Use POST with JSON body to avoid excessively long URLs
-    const url = LIVEINFOS_ENDPOINT;
+    const url = BLLIVEINFOS_ENDPOINT;
     const body = { uids: uids.map((u) => Number(u)) };
     const resp = await fetch(url, {
         method: 'POST',

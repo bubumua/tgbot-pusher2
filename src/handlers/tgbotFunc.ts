@@ -1,6 +1,7 @@
 import { sendMessage } from '../utils/telegram';
 import { KVStore } from '../storage/KVStore';
 import { fetchLiveInfos } from '../utils/bilibili';
+import { fetchDYLiveInfo } from '../utils/douyin';
 import {
     COMMAND_LIST_ALLUSER,
     COMMAND_ADD_BLUSER,
@@ -130,6 +131,93 @@ export async function handleTgWebhook(req: Request, env: Env) {
         return new Response('listed');
     }
 
+    // DY commands (Douyin)
+    if (cmd === COMMAND_ADD_DYUSER) {
+        if (!parts[1] || parts[1].length === 0) {
+            await sendMessage(env.BOT_TOKEN, chatId, 'Please provide a sec_user_id to add.');
+            return new Response('no uid', { status: 200 });
+        }
+        const sec = parts[1];
+        let nickname = '';
+        try {
+            const resp: any = await fetchDYLiveInfo(sec);
+            if (resp && resp.apisuccess && resp.data) {
+                const entry = resp.data;
+                nickname = entry?.nickname ?? entry?.uname ?? entry?.unique_id ?? '';
+            }
+        } catch (e) {
+            console.log('dy fetch nickname error', String(e));
+        }
+
+        const key = KEY_USERLIST;
+        const raw = (await DYStore.getJson<string[]>(key)) || [];
+        const list2 = Array.isArray(raw) ? raw : [];
+        if (!list2.includes(sec)) {
+            list2.push(sec);
+            await DYStore.setJson(key, list2);
+        }
+        const display = nickname ? `${sec}->${nickname}` : String(sec);
+        await sendMessage(env.BOT_TOKEN, chatId, `Added ${display}`);
+        return new Response('added');
+    }
+
+    if (cmd === COMMAND_REMOVE_DYUSER) {
+        if (!parts[1] || parts[1].length === 0) {
+            await sendMessage(env.BOT_TOKEN, chatId, 'Please provide a sec_user_id to remove.');
+            return new Response('no uid', { status: 200 });
+        }
+        const sec = parts[1];
+        let nickname = '';
+        try {
+            const resp: any = await fetchDYLiveInfo(sec);
+            if (resp && resp.apisuccess && resp.data) {
+                const entry = resp.data;
+                nickname = entry?.nickname ?? entry?.uname ?? entry?.unique_id ?? '';
+            }
+        } catch (e) {
+            console.log('dy fetch nickname error', String(e));
+        }
+
+        const key = KEY_USERLIST;
+        const raw = (await DYStore.getJson<string[]>(key)) || [];
+        const list2 = Array.isArray(raw) ? raw : [];
+        const idx = list2.indexOf(sec);
+        if (idx !== -1) {
+            list2.splice(idx, 1);
+            await DYStore.setJson(key, list2);
+        }
+        const display = nickname ? `${sec}->${nickname}` : String(sec);
+        await sendMessage(env.BOT_TOKEN, chatId, `Removed ${display}`);
+        return new Response('removed');
+    }
+
+    if (cmd === COMMAND_LIST_DYUSER) {
+        const key = KEY_USERLIST;
+        const raw = (await DYStore.getJson<string[]>(key)) || [];
+        const list2 = Array.isArray(raw) ? raw : [];
+        if (!list2 || list2.length === 0) {
+            await sendMessage(env.BOT_TOKEN, chatId, '(empty)');
+            return new Response('listed');
+        }
+
+        for (const sec of list2) {
+            let nickname = '';
+            try {
+                const infoRespDy: any = await fetchDYLiveInfo(sec);
+                if (infoRespDy && infoRespDy.apisuccess && infoRespDy.data) {
+                    const entry = infoRespDy.data;
+                    nickname = entry?.nickname ?? entry?.uname ?? entry?.unique_id ?? '';
+                }
+            } catch (e) {
+                console.log('dy fetch nickname error', String(e));
+            }
+            const display = nickname ? `${sec}->${nickname}` : String(sec);
+            await sendMessage(env.BOT_TOKEN, chatId, display);
+        }
+        return new Response('listed');
+    }
+
+    // unknown command
     await sendMessage(env.BOT_TOKEN, chatId, `Unknown command: ${cmd}`);
     return new Response('ok');
 }
