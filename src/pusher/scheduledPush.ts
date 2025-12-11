@@ -118,24 +118,24 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
         // record current status for persistence
         nextPrev[String(sec_user_id)] = Number(cur.live_status ?? 0);
         // status changed -> prepare message
-        if (Number(cur.live_status) !== Number(prev[String(sec_user_id)])) {
-            const statusTexts: Record<number, string> = {
-                0: '已下播',
-                1: '正在直播！',
-                2: '轮播中',
-            };
-            const statusText = statusTexts[Number(cur.live_status)] || `status: ${cur.live_status}`;
-            const header = `${cur.nickname || ''} - ${statusText}`;
-            const body = cur.title || '';
-            const iplocation = cur.ip_location || '';
-            const parts = [header];
-            if (body) parts.push(body);
-            if (iplocation) parts.push(iplocation);
-            const formatted = parts.join('\n');
-            if (Number(cur.live_status) === 1) liveMessages.push(formatted);
-            else if (Number(cur.live_status) === 2) loopMessages.push(formatted);
-            else offlineMessages.push(formatted);
-        }
+        const isLiveStatusChanged = Number(cur.live_status) !== Number(prev[String(sec_user_id)]);
+        if (!isLiveStatusChanged) continue;
+        const statusTexts: Record<number, string> = {
+            0: '已下播',
+            1: '正在直播！',
+            2: '轮播中',
+        };
+        const statusText = statusTexts[Number(cur.live_status)] || `status: ${cur.live_status}`;
+        const header = `${cur.nickname || ''} - ${statusText}`;
+        const body = cur.title || '';
+        const iplocation = cur.ip_location || '';
+        const parts = [header];
+        if (body) parts.push(body);
+        if (iplocation) parts.push(iplocation);
+        const formatted = parts.join('\n');
+        if (Number(cur.live_status) === 1) liveMessages.push(formatted);
+        else if (Number(cur.live_status) === 2) loopMessages.push(formatted);
+        else offlineMessages.push(formatted);
     }
 
     // persist latest DY statuses
@@ -194,7 +194,7 @@ export async function runScheduledPush(env: Env) {
     }
 
     // combine messages into one and send: BL first (if any), then DY
-    const finalText = ((blMessages ? `${blMessages}` : '') + `\n---\n` + (dyMessages ? `\n\n${dyMessages}` : '')).trim();
+    const finalText = ((blMessages ? `${blMessages}` : '') + (dyMessages ? `\n---\n\n${dyMessages}` : '')).trim();
     if (!finalText) {
         console.log('runScheduledPush: no status changes to send');
         return;
