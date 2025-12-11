@@ -86,13 +86,19 @@ export async function runScheduledPush(env: Env) {
 
         // status changed -> prepare message
         if (isLiveStatusChanged) {
-            const statusText = live_status == 1 ? '正在直播！' : '已下播';
+            const statusTexts: Record<number, string> = {
+                0: '已下播',
+                1: '正在直播！',
+                2: '轮播中',
+            }
+            const statusText = statusTexts[live_status] || `status: ${live_status}`;
             const header = `${uname}（${uid}）${statusText}`;
             const body = title ? `${title}` : '';
             const footer = tags ? `${tags}` : '';
             const parts = [header];
-            if (body && live_status == 1) parts.push(body);
-            if (footer && live_status == 1) parts.push(footer);
+            // include title/tags when status is active (1=live, 2=looping)
+            if (body && live_status !== 0) parts.push(body);
+            if (footer && live_status !== 0) parts.push(footer);
             messages.push(parts.join('\n'));
         }
     }
