@@ -49,7 +49,7 @@ export async function fetchDYLiveInfo(sec_user_id: string) {
     if (!sec_user_id || sec_user_id.length === 0) return null;
     // Use POST with JSON body to avoid excessively long URLs
     const url = DYLIVEINFO_ENDPOINT;
-    const body = { uids: sec_user_id };
+    const body = { "sec_user_id": sec_user_id };
     const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
