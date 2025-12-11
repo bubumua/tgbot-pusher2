@@ -44,6 +44,7 @@ export async function handleTgWebhook(req: Request, env: Env) {
     if (cmd === COMMAND_ADD_BLUSER) {
         if (!parts[1] || parts[1].length === 0) {
             await sendMessage(env.BOT_TOKEN, chatId, 'Please provide a UID to add.');
+            console.log('no uid provided.');
             return new Response('no uid', { status: 200 });
         }
         const uid = parts[1];
