@@ -7,17 +7,17 @@ import { fetchDYLiveInfo } from '../utils/douyin';
 async function getBLInfos(kv: KVNamespace): Promise<string> {
     // init KVStore for BL
     const BLStore: KVStore = new KVStore(kv, 'BL');
-    // read uplist from KVStore
-    const uplist = (await BLStore.getJson<number[] | string[]>(KEY_USERLIST)) || [];
-    if (!uplist || uplist.length === 0) {
-        console.log('getBLInfos: uplist empty');
+    // read userlist from KVStore
+    const userlist = (await BLStore.getJson<number[] | string[]>(KEY_USERLIST)) || [];
+    if (!userlist || userlist.length === 0) {
+        console.log('getBLInfos: userlist empty');
         return '';
     }
 
     // fetch current live infos
     let apiResp: any;
     try {
-        apiResp = await fetchLiveInfos(uplist);
+        apiResp = await fetchLiveInfos(userlist);
     } catch (e) {
         console.log('getBLInfos: fetch error', String(e));
         return '';
@@ -31,7 +31,9 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
     const cur = apiResp.data;
     // read previous statuses (mapping uid -> live_status) from KVStore
     let prev = (await BLStore.getJson<Record<string, number>>(KEY_LAST_INFO_STATUS)) || {};
-    const messages: string[] = [];
+    const liveMessages: string[] = [];
+    const loopMessages: string[] = [];
+    const offlineMessages: string[] = [];
 
     for (const uidKey of Object.keys(cur)) {
         const info = cur[uidKey];
@@ -44,21 +46,25 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
 
         const isLiveStatusChanged = Number(prev[uid]) !== live_status;
 
-        if (isLiveStatusChanged) {
-            const statusTexts: Record<number, string> = {
-                0: '已下播',
-                1: '正在直播！',
-                2: '轮播中',
-            };
-            const statusText = statusTexts[live_status] || `status: ${live_status}`;
-            const header = `${uname} - ${statusText}`;
-            const body = title ? `${title}` : '';
-            const footer = tags ? `${tags}` : '';
-            const parts = [header];
-            if (body && live_status !== 0) parts.push(body);
-            if (footer && live_status !== 0) parts.push(footer);
-            messages.push(parts.join('\n'));
-        }
+        if (!isLiveStatusChanged) continue;
+
+        const statusTexts: Record<number, string> = {
+            0: '已下播',
+            1: '正在直播！',
+            2: '轮播中',
+        };
+        const statusText = statusTexts[live_status] || `status: ${live_status}`;
+        const header = `${uname}（${uid}）${statusText}`;
+        const body = title ? `${title}` : '';
+        const footer = tags ? `${tags}` : '';
+        const parts = [header];
+        if (body && live_status !== 0) parts.push(body);
+        if (footer && live_status !== 0) parts.push(footer);
+        const formatted = parts.join('\n');
+
+        if (live_status === 1) liveMessages.push(formatted);
+        else if (live_status === 2) loopMessages.push(formatted);
+        else offlineMessages.push(formatted);
     }
 
     // update last live statuses and persist
@@ -72,7 +78,8 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
         console.log('getBLInfos: failed to write last statuses', String(e));
     }
 
-    return messages.length ? messages.join('\n\n') : '';
+    const ordered = [...liveMessages, ...loopMessages, ...offlineMessages];
+    return ordered.length ? ordered.join('\n\n') : '';
 }
 
 async function getDYInfos(kv: KVNamespace): Promise<string> {
@@ -85,7 +92,9 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
         return '';
     }
 
-    let DYInfos = '';
+    const liveMessages: string[] = [];
+    const loopMessages: string[] = [];
+    const offlineMessages: string[] = [];
 
     // read previous statuses (mapping sec_user_id -> live_status) from KVStore
     const prev = (await DYStore.getJson<Record<string, number>>(KEY_LAST_INFO_STATUS)) || {};
@@ -122,7 +131,10 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
             const parts = [header];
             if (body) parts.push(body);
             if (iplocation) parts.push(iplocation);
-            DYInfos += parts.join('\n') + '\n\n';
+            const formatted = parts.join('\n');
+            if (Number(cur.live_status) === 1) liveMessages.push(formatted);
+            else if (Number(cur.live_status) === 2) loopMessages.push(formatted);
+            else offlineMessages.push(formatted);
         }
     }
 
@@ -133,7 +145,8 @@ async function getDYInfos(kv: KVNamespace): Promise<string> {
         console.log('getDYInfos: failed to write last statuses', String(e));
     }
 
-    return DYInfos.trim();
+    const ordered = [...liveMessages, ...loopMessages, ...offlineMessages];
+    return ordered.length ? ordered.join('\n\n') : '';
 }
 
 /**
