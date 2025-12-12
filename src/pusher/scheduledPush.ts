@@ -57,7 +57,7 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
             2: '轮播中',
         };
         const statusText = statusTexts[live_status] || `status: ${live_status}`;
-        const header = `> ${uname} - ${statusText}`;
+        const header = `${uname} - ${statusText}`;
         const parts = [header];
         const body = title ? `> ${title}` : '';
         if (body && live_status !== 0) parts.push(body);
