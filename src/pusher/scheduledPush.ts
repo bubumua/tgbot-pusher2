@@ -57,12 +57,12 @@ async function getBLInfos(kv: KVNamespace): Promise<string> {
             2: '轮播中',
         };
         const statusText = statusTexts[live_status] || `status: ${live_status}`;
-        const header = `${uname}（${uid}）${statusText}`;
-        const body = title ? `${title}` : '';
-        const footer = tags ? `${tags}` : '';
+        const header = `> ${uname} - ${statusText}`;
         const parts = [header];
+        const body = title ? `> ${title}` : '';
         if (body && live_status !== 0) parts.push(body);
-        if (footer && live_status !== 0) parts.push(footer);
+        // const footer = tags ? `${tags}` : '';
+        // if (footer && live_status !== 0) parts.push(footer);
         const formatted = parts.join('\n');
         messages.push(formatted);
         if (live_status === 1) liveMessages.push(formatted);

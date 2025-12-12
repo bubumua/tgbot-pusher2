@@ -55,7 +55,7 @@ export async function fetchDYLiveInfo(sec_user_id: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
     });
-    if (!resp.ok) throw new Error(`liveinfos fetch failed: ${resp.status}`);
+    if (!resp.ok) throw new Error(`douyin upstream api fatal: ${resp.status}`);
     const json = await resp.json();
     return json;
 }
